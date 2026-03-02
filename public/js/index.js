@@ -1,6 +1,5 @@
 const statusSpan = document.getElementById("status");
-const tempTable = document.getElementById("sensor_temp");
-const humidityTable = document.getElementById("sensor_humidity");
+const trace = document.getElementById("trace");
 
 const socket = io();
 
@@ -10,7 +9,7 @@ socket.on('connect', () => {
 
 socket.on('connect_error', (error) => {
     if (socket.active) {
-        statusSpan.innerText = "Reconnecting...";
+        statusSpan.innerText = "Connecting...";
     } else {
         statusSpan.innerText = "Error";
         console.log(error);
@@ -18,13 +17,23 @@ socket.on('connect_error', (error) => {
 });
 
 socket.on('sensor', (msg) => {
-    console.log(msg);
-    if (msg.temp) {
-        tempTable.innerText = msg.temp;
+    // console.log(msg);
+    const pre = document.createElement("pre");
+    pre.innerText = JSON.stringify(msg, null, 4);
+
+    trace.prepend(pre);
+
+    let count = 0;
+    for (const node of trace.childNodes) {
+        if (count >= 10) {
+            trace.removeChild(node);
+            count++;
+            continue;
+        }
+
+        node.style.opacity = (10 - count) / 10;
+        count++;
     }
 
-    if (msg.humidity) {
-        humidityTable.innerText = msg.humidity;
-    }
 });
 

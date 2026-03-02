@@ -21,11 +21,13 @@ io.on('connection', (socket) => {
     });
 });
 
+// Logging all requests
 app.use((req, _res, next) => {
     console.log(`[${req.method}] ${req.url}`);
     next();
 });
 
+// Authentication
 app.use((req, res, next) => {
     if (req.method === 'POST' && secret && req.body.token !== secret) {
         console.log("Token does not match secret!")
@@ -34,17 +36,16 @@ app.use((req, res, next) => {
     }
 
     if (req.body?.token)
-        req.body.token = undefined;
+        delete req.body.token;
 
     next();
 });
 
+// Sensor API endpoint
 app.post('/api/sensor', (req, res) => {
-    const { temp, humidity, mean_db, max_db } = req.body;
+    console.log(JSON.stringify(req.body, null, 4));
 
-    console.log(`Temp: ${temp}, Humidity: ${humidity}, MeanDb: ${mean_db} MaxDb: ${max_db}`);
-
-    io.emit("sensor", { temp, humidity, mean_db, max_db });
+    io.emit("sensor", req.body);
 
     res.sendStatus(200);
 });
