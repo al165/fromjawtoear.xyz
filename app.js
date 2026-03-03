@@ -13,8 +13,10 @@ const port = process.env.PORT || 3000;
 
 const secret = process.env.TOKEN;
 
+const root = process.env.ROOT || '';
+
 app.use(express.json());
-app.use('/', express.static('public'));
+app.use(`${root}/`, express.static('public'));
 
 io.on('connection', (socket) => {
     socket.on('disconnect', () => {
@@ -42,7 +44,7 @@ app.use((req, res, next) => {
 });
 
 // Sensor API endpoint
-app.post('/api/sensor', (req, res) => {
+app.post(`${root}/api/sensor`, (req, res) => {
     console.log(JSON.stringify(req.body, null, 4));
 
     io.emit("sensor", req.body);
