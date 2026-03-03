@@ -58,6 +58,6 @@ server.listen(port, () => {
         console.log("Add TOKEN= to the .env file to set secret token");
     }
     console.log(`Server listening on port ${port}`);
-    console.log(`visit http://localhost:${port}`);
+    console.log(`visit http://localhost:${port}/${root}`);
 });
 
