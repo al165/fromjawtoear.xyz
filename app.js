@@ -10,9 +10,7 @@ const port = process.env.PORT || 3000;
 const secret = process.env.TOKEN;
 
 import { Server } from 'socket.io';
-const io = new Server(server, {
-    path: `/${root}/socket.io`
-});
+const io = new Server(server);
 
 
 app.use(express.json());

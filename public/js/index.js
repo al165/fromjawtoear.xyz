@@ -1,7 +1,24 @@
 const statusSpan = document.getElementById("status");
 const trace = document.getElementById("trace");
 
-const socket = io('/fromjawtoear');
+function createSocket() {
+    const { origin, pathname } = window.location;
+
+    // Split and filter empty segments (handles trailing slashes etc.)
+    const segments = pathname.split("/").filter(Boolean);
+
+    // Use first path segment as base, or empty string if at root
+    const basePath = segments.length > 0 ? `/${segments[0]}` : "";
+
+    console.log(origin);
+    console.log(basePath);
+
+    return io(origin, {
+        path: `${basePath}/socket.io`
+    });
+}
+
+const socket = createSocket();
 
 socket.on('connect', () => {
     statusSpan.innerText = "Connected";
