@@ -5,15 +5,15 @@ const server = createServer(app);
 
 import dotenv from 'dotenv';
 dotenv.config();
-
-import { Server } from 'socket.io';
-const io = new Server(server);
-
+const root = process.env.ROOT || '';
 const port = process.env.PORT || 3000;
-
 const secret = process.env.TOKEN;
 
-const root = process.env.ROOT || '';
+import { Server } from 'socket.io';
+const io = new Server(server, {
+    path: `/${root}/socket.io`
+});
+
 
 app.use(express.json());
 app.use(`${root}/`, express.static('public'));
