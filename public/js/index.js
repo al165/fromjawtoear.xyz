@@ -1,7 +1,9 @@
 const statusSpan = document.getElementById("status");
 const trace = document.getElementById("trace");
 
-const socket = io();
+const socket = io(null, {
+    path: "/fromjawtoear/socket.io"
+});
 
 socket.on('connect', () => {
     statusSpan.innerText = "Connected";
