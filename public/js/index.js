@@ -54,3 +54,67 @@ socket.on('sensor', (msg) => {
 
 });
 
+const STREAM_URL = 'https://radio.arranlyon.com/live';
+
+let isPlaying = false;
+const audio = document.getElementById("audio");
+const playBtn = document.getElementById("play");
+const radioStatus = document.getElementById("radio-status");
+
+function setRadioStatus(text) {
+    radioStatus.textContent = text;
+}
+
+function play() {
+    isPlaying = true;
+    audio.src = STREAM_URL;
+    audio.load();
+    setRadioStatus("Connecting...");
+
+    playBtn.innerText = 'pause';
+
+    const promise = audio.play();
+    if (promise !== undefined) {
+        promise.catch(err => {
+            console.error("Playback error: ", err);
+            setRadioStatus("Error");
+            isPlaying = false;
+            playBtn.innerText = 'play';
+        })
+    }
+}
+
+function pause() {
+    audio.pause();
+    audio.src = '';
+    isPlaying = false;
+    playBtn.innerText = 'play';
+    setRadioStatus("Paused");
+}
+
+playBtn.addEventListener('click', () => {
+    if (isPlaying)
+        pause();
+    else
+        play();
+})
+
+audio.addEventListener('playing', () => {
+    setRadioStatus("Live");
+});
+
+audio.addEventListener('waiting', () => {
+    if (isPlaying)
+        setRadioStatus("Buffering...")
+});
+
+audio.addEventListener('stalled', () => {
+    if (isPlaying)
+        setRadioStatus('Stalled, retrying...');
+});
+
+audio.addEventListener('error', () => {
+    console.log("Error");
+    setRadioStatus("Stream unavailable");
+});
+
