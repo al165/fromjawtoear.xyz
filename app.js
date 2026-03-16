@@ -29,9 +29,9 @@ app.use((req, _res, next) => {
 
 // Authentication
 app.use((req, res, next) => {
-    if (req.method === 'POST' && secret && req.body.token !== secret) {
+    if (req.method === 'POST' && secret && !req.body?.token !== secret) {
         console.log("Token does not match secret!")
-        console.log(`token: ${req.body.token}, secret: ${secret}`);
+        console.log(`token: ${req.body.token}`);
         return res.sendStatus(304);
     }
 

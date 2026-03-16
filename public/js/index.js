@@ -114,7 +114,6 @@ audio.addEventListener('stalled', () => {
 });
 
 audio.addEventListener('error', () => {
-    console.log("Error");
     setRadioStatus("Stream unavailable");
 });
 
