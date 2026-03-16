@@ -30,25 +30,16 @@ app.use((req, _res, next) => {
 // Authentication
 app.use((req, res, next) => {
     if (req.method === 'POST' && secret) {
-        try {
-            if (req.body.token !== secret) {
-                console.log("Token does not match secret!")
-                console.log(`token: ${req.body.token}`);
-                return res.sendStatus(304);
-            }
-        } catch {
-            console.log("Token does not match secret!")
-            console.log(`token: ${req.body.token}`);
-            return res.sendStatus(304);
+        const token = req.body?.token;
+
+        if (!token || token !== secret) {
+            console.log("Token does not match secret!");
+            console.log(`token: ${token}`);
+            return res.sendStatus(401);
         }
     }
 
-    try {
-        delete req.body.token;
-    } catch {
-
-    }
-
+    delete req.body?.token;
     next();
 });
 
