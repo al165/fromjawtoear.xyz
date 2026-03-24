@@ -8,12 +8,31 @@
     <script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script>
   </head>
   <body>
-    <h1>From Jaw to Ear</h1>
-    <button id="play">play</button>
-    <audio id="audio" preload="none" crossorigin></audio>
-    <p>Radio: <span id="radio-status">Not connected</span> Sensor updates: <span id="status">Not connected</span></p>
+    <div id="trace"><p class="line"></p></div>
 
-    <div id="trace"></div>
+    <img class="sculpture" id="amplification" src="images/Amplification.png" alt="Amplification sculpture">
+    <img class="sculpture recognised" id="echo" src="images/Echo.png" alt="Echo sculpture">
+    <img class="sculpture" id="latency" src="images/Latency.png" alt="Latency sculpture">
+    <img class="sculpture" id="resonance" src="images/Resonance.png" alt="Resonance sculpture">
+    <img class="sculpture recognised" id="threshold" src="images/Threshold.png" alt="Threshold sculpture">
+    <img class="sculpture" id="transmission" src="images/Transmission.png" alt="Transmission sculpture">
+
+    <div id="title" class="draggable">
+      <h1>From Jaw to Ear — <br>From Bone to Signal </h1>
+    </div>
+
+    <div id="radio" class="draggable">
+      <button id="play">play</button>
+      <audio id="audio" preload="none" crossorigin></audio>
+      <p>Radio: <span id="radio-status">Not connected</span></p>
+      <p>Sensor updates: <span id="status">Not connected</span></p>
+    </div>
+    
+    <div id="overlay">
+      <img id="start-play" src="icons/play.svg" alt="Play radio">
+      <!-- <button id="start-play">play</button> -->
+    </div>
+
 
     <script src="js/index.js"></script>
   </body>

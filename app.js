@@ -23,7 +23,7 @@ io.on('connection', (socket) => {
 
 // Logging all requests
 app.use((req, _res, next) => {
-    console.log(`[${req.method}] ${req.url}`);
+    // console.log(`[${req.method}] ${req.url}`);
     next();
 });
 
@@ -45,7 +45,7 @@ app.use((req, res, next) => {
 
 // Sensor API endpoint
 app.post(`${root}/api/sensor`, (req, res) => {
-    console.log(JSON.stringify(req.body, null, 4));
+    // console.log(JSON.stringify(req.body, null, 4));
 
     io.emit("sensor", req.body);
 
