@@ -19,6 +19,7 @@
 
 body {
   font-family: Ribes-Light, 'Arial', sans-serif;
+  font-size: 14pt;
   background-color: darkgrey;
   overflow: hidden;
   width: 100vw;
