@@ -47,7 +47,7 @@ socket.on('sensor', (msg) => {
     else if (msg.state)
         text = `state: ${msg.state} movement: ${msg.movement.toFixed(2)} threshold: ${msg.threshold.toFixed(2)} confidence: ${msg.confidence.toFixed(2)} packets_processed: ${msg.packets_processed} packets_dropped: ${msg.packets_dropped}`;
     else
-        text = `${msg}`;
+        text = `${JSON.stringify(msg)}`;
 
     text = `${timestamp} ${text}`;
 
