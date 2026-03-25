@@ -46,6 +46,8 @@ socket.on('sensor', (msg) => {
         text = `temp: ${msg.temp.toFixed(2)} humidity: ${msg.humidity.toFixed(2)} meanDb: ${msg.mean_db.toFixed(2)} maxDb: ${msg.max_db.toFixed(2)}`;
     else if (msg.state)
         text = `state: ${msg.state} movement: ${msg.movement.toFixed(2)} threshold: ${msg.threshold.toFixed(2)} confidence: ${msg.confidence.toFixed(2)} packets_processed: ${msg.packets_processed} packets_dropped: ${msg.packets_dropped}`;
+    else
+        text = `${msg}`;
 
     text = `${timestamp} ${text}`;
 
