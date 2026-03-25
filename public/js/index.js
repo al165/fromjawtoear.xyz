@@ -1,4 +1,3 @@
-const statusSpan = document.getElementById("status");
 const trace = document.getElementById("trace");
 
 function createSocket() {
@@ -18,15 +17,14 @@ function createSocket() {
 const socket = createSocket();
 
 socket.on('connect', () => {
-    statusSpan.innerText = "Connected";
+    console.log("socket connected");
 });
 
 socket.on('connect_error', (error) => {
     if (socket.active) {
-        statusSpan.innerText = "Connecting...";
+        console.log("socket connecting...");
     } else {
-        statusSpan.innerText = "Error";
-        console.log(error);
+        console.error(error);
     }
 });
 
@@ -69,6 +67,10 @@ socket.on('sensor', (msg) => {
             if (rect.bottom >= window.innerHeight) {
                 max_lines = line_no
             }
+
+            const t = rect.top / window.innerHeight;
+            pre.style.color = `hsl(0, 0%, ${t * 100}%)`;
+
             return pre;
         }
     }
@@ -104,27 +106,20 @@ let isPlaying = false;
 const audio = document.getElementById("audio");
 const startPlayBtn = document.getElementById("start-play");
 const playBtn = document.getElementById("play");
-const radioStatus = document.getElementById("radio-status");
-
-function setRadioStatus(text) {
-    radioStatus.textContent = text;
-}
 
 function play() {
     isPlaying = true;
     audio.src = STREAM_URL;
     audio.load();
-    setRadioStatus("Connecting...");
 
-    playBtn.innerText = 'pause';
+    playBtn.src = 'icons/pause.svg';
 
     const promise = audio.play();
     if (promise !== undefined) {
         promise.catch(err => {
             console.error("Playback error: ", err);
-            setRadioStatus("Error");
             isPlaying = false;
-            playBtn.innerText = 'play';
+            playBtn.src = 'icons/play.svg';
         })
     }
 }
@@ -133,8 +128,7 @@ function pause() {
     audio.pause();
     audio.src = '';
     isPlaying = false;
-    playBtn.innerText = 'play';
-    setRadioStatus("Paused");
+    playBtn.src = 'icons/play.svg';
 }
 
 startPlayBtn.addEventListener('click', () => {
@@ -150,21 +144,20 @@ playBtn.addEventListener('click', () => {
 });
 
 audio.addEventListener('playing', () => {
-    setRadioStatus("Live");
+    console.log("Playing");
 });
 
 audio.addEventListener('waiting', () => {
-    if (isPlaying)
-        setRadioStatus("Buffering...")
+    console.log("Buffering");
 });
 
 audio.addEventListener('stalled', () => {
-    if (isPlaying)
-        setRadioStatus('Stalled, retrying...');
+    console.log("radio stalled...");
 });
 
-audio.addEventListener('error', () => {
-    setRadioStatus("Stream unavailable");
+audio.addEventListener('error', (err) => {
+    console.error("Stream error");
+    console.error(err);
 });
 
 function moveDraggable(el, ev) {
@@ -211,7 +204,7 @@ function bringToFront(el) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-    document.querySelectorAll('.draggable').forEach(el => {
+    document.querySelectorAll('.moveable').forEach(el => {
         let offsetX, offsetY, isDragging = false;
 
         const startDrag = (x, y) => {
@@ -261,14 +254,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     const width = window.innerWidth;
     const height = window.innerHeight;
 
-    const titleDraggable = document.getElementById("title");
-    titleDraggable.style.top = "15px";
-    titleDraggable.style.left = "15px";
-
-
-    const radioDraggable = document.getElementById("radio");
-    radioDraggable.style.top = `${height - radioDraggable.clientHeight - 15}px`;
-    radioDraggable.style.left = `${width - radioDraggable.clientWidth - 10}px`;
+    // const titleDraggable = document.getElementById("title");
+    // titleDraggable.style.top = "15px";
+    // titleDraggable.style.left = "15px";
+    //
+    // const radioDraggable = document.getElementById("radio");
+    // radioDraggable.style.top = `${height - radioDraggable.clientHeight - 15}px`;
+    // radioDraggable.style.left = `${width - radioDraggable.clientWidth - 10}px`;
+    //
+    // const infoDraggable = document.getElementById("info");
+    // infoDraggable.style.top = `${height - radioDraggable.clientHeight - 15}px`;
+    // infoDraggable.style.left = `10px`;
+    // infoDraggable.style.borderRadius = '40px 0';
 
     // Position sculptures
     const sculptures = Array.from(document.querySelectorAll(".sculpture"));
@@ -301,6 +298,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 });
 
+const infoBtn = document.getElementById("info-btn");
+let infoOpen = false;
+infoBtn.addEventListener('click', () => {
+    const info = document.getElementById("info");
+    const infoText = document.getElementById("info-text");
+    if (infoOpen) {
+        info.style.left = "10px";
+        info.style.bottom = "10px";
+        info.style.right = "";
+        info.style.top = "";
+
+        infoText.style.display = "none";
+
+        infoOpen = false;
+        infoBtn.src = "icons/info.svg";
+    } else {
+        info.style.top = "10px";
+        info.style.left = "10px";
+        info.style.right = "10px";
+        info.style.bottom = "10px";
+
+        infoText.style.display = "block";
+
+        infoOpen = true;
+        infoBtn.src = "icons/close.svg";
+    }
+});
+
 function shuffleArray(arr) {
     for (let i = arr.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -320,3 +345,50 @@ function waitForImages(elements) {
     return Promise.all(promises);
 }
 
+
+let num_recognised = 0;
+const sculptures = document.getElementsByClassName("sculpture");
+
+function randomElement(arr) {
+    if (arr.length)
+        return arr[Math.floor(Math.random() * arr.length)];
+    else
+        return undefined;
+}
+
+function recognise() {
+    // Select random sculpture
+
+    let find_new;
+
+    num_recognised = document.querySelectorAll('.recognised').length;
+
+    if (num_recognised < 1) {
+        find_new = true;
+    } else if (num_recognised >= 2) {
+        find_new = false;
+    } else {
+        find_new = Math.random() < 0.5;
+    }
+
+    if (find_new) {
+        let found = false;
+        let unrecognised = document.querySelectorAll('.sculpture');
+        let new_sculpture;
+        while (!found) {
+            new_sculpture = randomElement(unrecognised);
+            if (new_sculpture.classList.contains("recognised"))
+                continue;
+
+            break;
+        }
+        new_sculpture.classList.add("recognised");
+    } else {
+        const recognised = document.querySelectorAll('.recognised');
+        randomElement(recognised).classList.remove('recognised');
+    }
+
+    setTimeout(recognise, Math.random() * 3000 + 500);
+}
+
+setTimeout(recognise, 2000);
