@@ -112,7 +112,8 @@ function play() {
     audio.src = STREAM_URL;
     audio.load();
 
-    playBtn.src = 'icons/pause.svg';
+    if (playBtn)
+        playBtn.src = 'icons/pause.svg';
 
     const promise = audio.play();
     if (promise !== undefined) {
@@ -131,34 +132,38 @@ function pause() {
     playBtn.src = 'icons/play.svg';
 }
 
-startPlayBtn.addEventListener('click', () => {
-    document.getElementById("overlay").style.display = 'none';
-    play();
-});
-
-playBtn.addEventListener('click', () => {
-    if (isPlaying)
-        pause();
-    else
+if (startPlayBtn)
+    startPlayBtn.addEventListener('click', () => {
+        document.getElementById("overlay").style.display = 'none';
         play();
-});
+    });
 
-audio.addEventListener('playing', () => {
-    console.log("Playing");
-});
+if (playBtn)
+    playBtn.addEventListener('click', () => {
+        if (isPlaying)
+            pause();
+        else
+            play();
+    });
 
-audio.addEventListener('waiting', () => {
-    console.log("Buffering");
-});
+if (audio) {
+    audio.addEventListener('playing', () => {
+        console.log("Playing");
+    });
 
-audio.addEventListener('stalled', () => {
-    console.log("radio stalled...");
-});
+    audio.addEventListener('waiting', () => {
+        console.log("Buffering");
+    });
 
-audio.addEventListener('error', (err) => {
-    console.error("Stream error");
-    console.error(err);
-});
+    audio.addEventListener('stalled', () => {
+        console.log("radio stalled...");
+    });
+
+    audio.addEventListener('error', (err) => {
+        console.error("Stream error");
+        console.error(err);
+    });
+}
 
 function moveDraggable(el, ev) {
     ev.preventDefault();
@@ -300,31 +305,33 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 const infoBtn = document.getElementById("info-btn");
 let infoOpen = false;
-infoBtn.addEventListener('click', () => {
-    const info = document.getElementById("info");
-    const infoText = document.getElementById("info-text");
-    if (infoOpen) {
-        info.style.left = "10px";
-        info.style.bottom = "10px";
-        info.style.right = "";
-        info.style.top = "";
 
-        infoText.style.display = "none";
+if (infoBtn)
+    infoBtn.addEventListener('click', () => {
+        const info = document.getElementById("info");
+        const infoText = document.getElementById("info-text");
+        if (infoOpen) {
+            info.style.left = "10px";
+            info.style.bottom = "10px";
+            info.style.right = "";
+            info.style.top = "";
 
-        infoOpen = false;
-        infoBtn.src = "icons/info.svg";
-    } else {
-        info.style.top = "10px";
-        info.style.left = "10px";
-        info.style.right = "10px";
-        info.style.bottom = "10px";
+            infoText.style.display = "none";
 
-        infoText.style.display = "block";
+            infoOpen = false;
+            infoBtn.src = "icons/info.svg";
+        } else {
+            info.style.top = "10px";
+            info.style.left = "10px";
+            info.style.right = "10px";
+            info.style.bottom = "10px";
 
-        infoOpen = true;
-        infoBtn.src = "icons/close.svg";
-    }
-});
+            infoText.style.display = "block";
+
+            infoOpen = true;
+            infoBtn.src = "icons/close.svg";
+        }
+    });
 
 function shuffleArray(arr) {
     for (let i = arr.length - 1; i > 0; i--) {
