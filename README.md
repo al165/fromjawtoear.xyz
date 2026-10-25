@@ -4,7 +4,8 @@ Webpage front-end and server for [_From Jaw to Ear_](https://fromjawtoear.xyz),
 Natalia Jordanova, 2026.
 
 Accepts sensor data to `/api/sensor` so long as `token` is included in the
-body, which can be set in `.env` in root.
+body, which can be set in `/srv/config/fromjawtoear.env` (if deploying with
+`pm2`), otherwise in `.env` in root.
 
 ## Attribution
 
