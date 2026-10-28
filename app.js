@@ -16,6 +16,10 @@ const io = new Server(server);
 
 app.use(express.json());
 
+app.get('/health', (_req, res) => {
+    res.json({ status: 'ok' });
+});
+
 if (SEGMENTS) {
     console.log(`SEGMENTS: ${SEGMENTS}`);
     app.use(`${ROOT}/segments/`, express.static(SEGMENTS));
