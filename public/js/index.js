@@ -52,7 +52,7 @@ socket.on('sensor', (msg) => {
     const words = text.split(' ');
 
     function selectLineEl() {
-        const lines = trace.childNodes;
+        const lines = trace.children;
         if (line_no < lines.length && lines[line_no]) {
             const el = lines[line_no];
             el.innerText = '';
