@@ -2,6 +2,13 @@ services:
   app:
     build: .
     env_file: .env
+    environment:
+      SEGMENTS: /segments
     restart: unless-stopped
     ports:
       - "127.0.0.1:3000:3000"
+    volumes:
+      - type: bind
+        source: ${SEGMENTS}
+        target: /segments
+        read_only: false
