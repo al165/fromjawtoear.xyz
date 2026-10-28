@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>From Jaw to Ear Player</title>
+    <style>
+      :root {
+        --bg: #f6f6f4; --fg: #1c1c1a; --muted: #6b6b66; --card: #ffffff;
+        --line: #dcdcd6; --accent: #2457d6; --accent-fg: #ffffff;
+        --buf: #b9c8f0; --ok: #1d7a3a; --bad: #b3261e;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #151515; --fg: #ececea; --muted: #9a9a94; --card: #202020;
+          --line: #343432; --accent: #6b92ff; --accent-fg: #0b0b0b;
+          --buf: #34436b; --ok: #5fd083; --bad: #ff8a80;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; background: var(--bg); color: var(--fg);
+        font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      }
+      main { max-width: 820px; margin: 0 auto; padding: 24px 16px 48px; }
+      h1 { font-size: 20px; margin: 0 0 4px; }
+      .sub { color: var(--muted); margin: 0 0 20px; }
+      section {
+        background: var(--card); border: 1px solid var(--line);
+        border-radius: 10px; padding: 16px; margin-bottom: 14px;
+      }
+      h2 { font-size: 12px; letter-spacing: .06em; text-transform: uppercase;
+           color: var(--muted); margin: 0 0 10px; font-weight: 600; }
+      .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+      .row + .row { margin-top: 10px; }
+      input[type=text], input[type=number], select {
+        font: inherit; color: inherit; background: var(--bg);
+        border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px;
+      }
+      input[type=text] { flex: 1; min-width: 140px; }
+      input[type=number] { width: 90px; }
+      button {
+        font: inherit; cursor: pointer; color: var(--fg); background: var(--bg);
+        border: 1px solid var(--line); border-radius: 6px; padding: 7px 12px;
+      }
+      button:hover { border-color: var(--accent); }
+      button.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+      button:disabled { opacity: .5; cursor: default; }
+      .clock { font-variant-numeric: tabular-nums; font-size: 28px; font-weight: 600; }
+      .clock small { font-size: 15px; font-weight: 400; color: var(--muted); }
+      .track { position: relative; height: 10px; margin: 14px 0 4px;
+               background: var(--line); border-radius: 5px; overflow: hidden; }
+      .track .buf { position: absolute; top: 0; bottom: 0; background: var(--buf); }
+      .track .pos { position: absolute; top: 0; bottom: 0; left: 0; background: var(--accent); }
+      input[type=range] { width: 100%; margin: 0; accent-color: var(--accent); }
+      .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+      .stat b { display: block; font-size: 18px; font-variant-numeric: tabular-nums; }
+      .stat span { color: var(--muted); font-size: 12px; }
+      #status { font-weight: 600; }
+      #status.ok { color: var(--ok); } #status.bad { color: var(--bad); }
+      #log {
+        height: 220px; overflow-y: auto; margin: 0; padding: 10px;
+        background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
+        font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        white-space: pre-wrap;
+      }
+      #log .warn { color: var(--bad); } #log .good { color: var(--ok); }
+      .hint { color: var(--muted); font-size: 13px; margin-top: 8px; }
+      kbd { background: var(--bg); border: 1px solid var(--line); border-radius: 4px;
+            padding: 0 5px; font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>HLS audio playback test</h1>
+      <p class="sub">Jump to any point in the archive and check that playback is seamless across hour boundaries.</p>
+      <section>
+        <h2>Playlist</h2>
+        <div class="row">
+          <input type="text" id="url" value="/segments/playlist.m3u8" spellcheck="false" aria-label="Playlist URL">
+          <button id="load" class="primary">Load</button>
+        </div>
+        <div class="hint">Status: <span id="status">not loaded</span></div>
+      </section>
+      <section>
+        <h2>Player</h2>
+        <audio id="audio" preload="auto"></audio>
+        <div class="clock"><span id="cur">00:00:00</span> <small>/ <span id="tot">--:--:--</span></small></div>
+        <div class="track" aria-hidden="true">
+          <div class="pos" id="pos"></div>
+          <div id="bufs"></div>
+        </div>
+        <input type="range" id="seek" min="0" max="0" step="1" value="0" disabled aria-label="Seek">
+        <div class="row">
+          <button data-skip="-600">−10m</button>
+          <button data-skip="-60">−1m</button>
+          <button data-skip="-10">−10s</button>
+          <button id="play" class="primary" disabled>Play</button>
+          <button data-skip="10">+10s</button>
+          <button data-skip="60">+1m</button>
+          <button data-skip="600">+10m</button>
+          <select id="rate" aria-label="Playback speed">
+            <option value="0.75">0.75×</option><option value="1" selected>1×</option>
+            <option value="1.5">1.5×</option><option value="2">2×</option>
+            <option value="4">4×</option>
+          </select>
+        </div>
+        <div class="hint">Shortcuts: <kbd>Space</kbd> play/pause, <kbd>←</kbd>/<kbd>→</kbd> ±10s, <kbd>Shift</kbd>+arrow ±1m.</div>
+      </section>
+      <section>
+        <h2>Jump to time</h2>
+        <div class="row">
+          <input type="text" id="jump" placeholder="HH:MM:SS (e.g. 27:14:30), MM:SS, or seconds" spellcheck="false">
+          <button id="go" class="primary">Go</button>
+          <button id="copy">Copy link to current time</button>
+        </div>
+        <div class="row">
+          <span class="hint" style="margin:0">Hour marks:</span>
+          <span id="hours" class="row" style="margin:0"></span>
+        </div>
+      </section>
+      <section>
+        <h2>Seamlessness test</h2>
+        <p class="hint" style="margin-top:0">
+          The original files were 1 hour long, so boundaries fall on every whole hour.
+          These buttons start playback shortly before one, so you can listen for a click, gap or glitch.
+        </p>
+        <div class="row">
+          <label>Boundary at hour <input type="number" id="bh" min="1" value="1"></label>
+          <label>start <input type="number" id="lead" min="1" max="120" value="8"> s before</label>
+          <button id="testb">Play across it</button>
+          <button id="nextb">Next boundary from here</button>
+        </div>
+      </section>
+      <section>
+        <h2>Diagnostics</h2>
+        <div class="stats">
+          <div class="stat"><b id="s-frags">0</b><span>segments loaded</span></div>
+          <div class="stat"><b id="s-last">–</b><span>last segment #</span></div>
+          <div class="stat"><b id="s-bytes">0 MB</b><span>downloaded</span></div>
+          <div class="stat"><b id="s-ahead">0 s</b><span>buffered ahead</span></div>
+          <div class="stat"><b id="s-stalls">0</b><span>stalls (waiting)</span></div>
+          <div class="stat"><b id="s-errs">0</b><span>errors</span></div>
+          <div class="stat"><b id="s-seg">–</b><span>segment length</span></div>
+        </div>
+        <h2 style="margin-top:16px">Log</h2>
+        <pre id="log" aria-live="off"></pre>
+      </section>
+    </main>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.15/hls.min.js"></script>
+    <script>
+      (() => {
+        const $ = id => document.getElementById(id);
+        const audio = $('audio');
+        let hls = null;
+        let dragging = false;
+        let lastHour = null;
+        let stats = { frags: 0, bytes: 0, stalls: 0, errs: 0 };
+
+        // ---------- helpers ----------
+        const pad = n => String(Math.floor(n)).padStart(2, '0');
+        function fmt(sec) {
+          sec = Math.max(0, sec || 0);
+          return `${pad(sec / 3600)}:${pad((sec % 3600) / 60)}:${pad(sec % 60)}`;
+        }
+        function parseTime(str) {
+          const parts = String(str).trim().split(':').map(Number);
+          if (!parts.length || parts.length > 3 || parts.some(n => !isFinite(n) || n < 0)) return null;
+          return parts.reduce((acc, n) => acc * 60 + n, 0);
+        }
+        function duration() {
+          if (isFinite(audio.duration) && audio.duration > 0) return audio.duration;
+          const d = hls && hls.levels && hls.levels[0] && hls.levels[0].details;
+          return d ? d.totalduration : 0;
+        }
+        function log(msg, cls) {
+          const el = $('log');
+          const line = document.createElement('div');
+          if (cls) line.className = cls;
+          line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+          el.appendChild(line);
+          while (el.childNodes.length > 300) el.removeChild(el.firstChild);
+          el.scrollTop = el.scrollHeight;
+        }
+        function setStatus(text, cls) {
+          const s = $('status');
+          s.textContent = text;
+          s.className = cls || '';
+        }
+
+        // ---------- UI refresh ----------
+        function bufferedAhead() {
+          const t = audio.currentTime, b = audio.buffered;
+          for (let i = 0; i < b.length; i++) {
+            if (t >= b.start(i) - 0.1 && t <= b.end(i)) return b.end(i) - t;
+          }
+          return 0;
+        }
+        function refresh() {
+          const dur = duration();
+          const t = audio.currentTime || 0;
+          if (dur) {
+            $('tot').textContent = fmt(dur);
+            $('seek').max = Math.floor(dur);
+            $('pos').style.width = (t / dur * 100) + '%';
+          }
+          if (!dragging) {
+            $('seek').value = Math.floor(t);
+            $('cur').textContent = fmt(t);
+          }
+          const bufs = $('bufs');
+          bufs.textContent = '';
+          if (dur) {
+            for (let i = 0; i < audio.buffered.length; i++) {
+              const d = document.createElement('div');
+              d.className = 'buf';
+              d.style.left = (audio.buffered.start(i) / dur * 100) + '%';
+              d.style.width = ((audio.buffered.end(i) - audio.buffered.start(i)) / dur * 100) + '%';
+              bufs.appendChild(d);
+            }
+          }
+          $('s-ahead').textContent = bufferedAhead().toFixed(0) + ' s';
+          $('play').textContent = audio.paused ? 'Play' : 'Pause';
+        }
+        function refreshStats() {
+          $('s-frags').textContent = stats.frags;
+          $('s-bytes').textContent = (stats.bytes / 1048576).toFixed(1) + ' MB';
+          $('s-stalls').textContent = stats.stalls;
+          $('s-errs').textContent = stats.errs;
+        }
+        function buildHourButtons() {
+          const wrap = $('hours');
+          wrap.textContent = '';
+          const dur = duration();
+          const hours = Math.floor(dur / 3600);
+          for (let h = 0; h <= hours; h++) {
+            const b = document.createElement('button');
+            b.textContent = h + 'h';
+            b.addEventListener('click', () => seekTo(h * 3600, true));
+            wrap.appendChild(b);
+          }
+          $('bh').max = Math.max(1, hours);
+        }
+
+        // ---------- actions ----------
+        function seekTo(sec, play) {
+          const dur = duration();
+          if (!dur) return;
+          sec = Math.min(Math.max(0, sec), dur - 0.5);
+          audio.currentTime = sec;
+          lastHour = Math.floor(sec / 3600);
+          log(`Seek -> ${fmt(sec)}`);
+          if (play) audio.play().catch(e => log('play() blocked: ' + e.message, 'warn'));
+        }
+
+        function load(url) {
+          if (hls) { hls.destroy(); hls = null; }
+          audio.removeAttribute('src');
+          audio.load();
+          stats = { frags: 0, bytes: 0, stalls: 0, errs: 0 };
+          refreshStats();
+          $('s-last').textContent = '–';
+          $('s-seg').textContent = '–';
+          setStatus('loading…');
+          log('Loading ' + url);
+
+          const start = parseTime((location.hash.match(/t=([\d:.]+)/) || [])[1] || '');
+
+          if (window.Hls && Hls.isSupported()) {
+            hls = new Hls({ maxBufferLength: 60, startPosition: start != null ? start : -1 });
+            hls.on(Hls.Events.MANIFEST_PARSED, (_, d) => {
+              log(`Manifest parsed (${d.levels.length} level(s))`, 'good');
+            });
+            hls.on(Hls.Events.LEVEL_LOADED, (_, d) => {
+              const det = d.details;
+              setStatus(`ready — ${fmt(det.totalduration)} total, ${det.fragments.length} segments`, 'ok');
+              $('s-seg').textContent = (det.targetduration || 0) + ' s';
+              log(`Playlist: ${fmt(det.totalduration)} (${det.totalduration.toFixed(1)} s), ${det.fragments.length} segments, target ${det.targetduration}s`);
+              $('seek').disabled = false;
+              $('play').disabled = false;
+              buildHourButtons();
+              refresh();
+            });
+            hls.on(Hls.Events.FRAG_LOADED, (_, d) => {
+              stats.frags++;
+              stats.bytes += d.payload ? d.payload.byteLength : 0;
+              $('s-last').textContent = d.frag.sn;
+              refreshStats();
+            });
+            hls.on(Hls.Events.ERROR, (_, d) => {
+              stats.errs++;
+              refreshStats();
+              log(`hls.js ${d.fatal ? 'FATAL ' : ''}${d.type}/${d.details}` +
+                  (d.response ? ` (HTTP ${d.response.code})` : ''), 'warn');
+              if (d.fatal) {
+                if (d.type === Hls.ErrorTypes.NETWORK_ERROR) {
+                  setStatus('network error — check the playlist URL / server', 'bad');
+                  hls.startLoad();
+                } else if (d.type === Hls.ErrorTypes.MEDIA_ERROR) {
+                  log('Attempting media error recovery…');
+                  hls.recoverMediaError();
+                } else {
+                  setStatus('fatal error — see log', 'bad');
+                  hls.destroy();
+                }
+              }
+            });
+            hls.loadSource(url);
+            hls.attachMedia(audio);
+          } else if (audio.canPlayType('application/vnd.apple.mpegurl')) {
+            log('Using native HLS playback');
+            audio.src = url;
+            $('seek').disabled = false;
+            $('play').disabled = false;
+            audio.addEventListener('loadedmetadata', function once() {
+              audio.removeEventListener('loadedmetadata', once);
+              setStatus(`ready — ${fmt(audio.duration)} total`, 'ok');
+              buildHourButtons();
+              if (start != null) audio.currentTime = start;
+            });
+          } else {
+            setStatus('HLS not supported in this browser', 'bad');
+          }
+        }
+
+        // ---------- events ----------
+        $('load').addEventListener('click', () => load($('url').value.trim()));
+        $('url').addEventListener('keydown', e => { if (e.key === 'Enter') load($('url').value.trim()); });
+
+        $('play').addEventListener('click', () => {
+          if (audio.paused) audio.play().catch(e => log('play() failed: ' + e.message, 'warn'));
+          else audio.pause();
+        });
+        document.querySelectorAll('[data-skip]').forEach(b =>
+          b.addEventListener('click', () => seekTo(audio.currentTime + Number(b.dataset.skip))));
+        $('rate').addEventListener('change', e => { audio.playbackRate = Number(e.target.value); });
+
+        $('seek').addEventListener('pointerdown', () => { dragging = true; });
+        $('seek').addEventListener('input', e => { $('cur').textContent = fmt(Number(e.target.value)); });
+        $('seek').addEventListener('change', e => {
+          dragging = false;
+          seekTo(Number(e.target.value));
+        });
+
+        function doJump() {
+          const sec = parseTime($('jump').value);
+          if (sec == null) { log('Could not parse time: ' + $('jump').value, 'warn'); return; }
+          seekTo(sec, true);
+        }
+        $('go').addEventListener('click', doJump);
+        $('jump').addEventListener('keydown', e => { if (e.key === 'Enter') doJump(); });
+
+        $('copy').addEventListener('click', () => {
+          const link = location.origin + location.pathname + '#t=' + fmt(audio.currentTime);
+          history.replaceState(null, '', '#t=' + fmt(audio.currentTime));
+          (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject())
+            .then(() => log('Copied ' + link, 'good'))
+            .catch(() => log('Link: ' + link));
+        });
+
+        $('testb').addEventListener('click', () => {
+          const h = Number($('bh').value), lead = Number($('lead').value);
+          seekTo(h * 3600 - lead, true);
+        });
+        $('nextb').addEventListener('click', () => {
+          const next = (Math.floor(audio.currentTime / 3600) + 1) * 3600;
+          seekTo(next - Number($('lead').value), true);
+        });
+
+        audio.addEventListener('timeupdate', () => {
+          refresh();
+          const t = audio.currentTime;
+          const h = Math.floor(t / 3600);
+          if (lastHour !== null && h === lastHour + 1 && !audio.seeking) {
+            log(`Crossed hour boundary ${h}h at ${fmt(t)} — stalls so far: ${stats.stalls}`,
+                stats.stalls ? 'warn' : 'good');
+          }
+          lastHour = h;
+        });
+        audio.addEventListener('progress', refresh);
+        audio.addEventListener('durationchange', refresh);
+        audio.addEventListener('play', refresh);
+        audio.addEventListener('pause', refresh);
+        audio.addEventListener('waiting', () => {
+          stats.stalls++;
+          refreshStats();
+          log(`Waiting for data at ${fmt(audio.currentTime)}`, 'warn');
+        });
+        audio.addEventListener('playing', () => log(`Playing at ${fmt(audio.currentTime)}`));
+        audio.addEventListener('error', () => {
+          const e = audio.error;
+          log(`<audio> error ${e ? e.code : ''} ${e ? e.message : ''}`, 'warn');
+        });
+
+        document.addEventListener('keydown', e => {
+          const tag = (e.target.tagName || '').toLowerCase();
+          if (tag === 'input' || tag === 'select' || tag === 'textarea') return;
+          if (e.code === 'Space') { e.preventDefault(); $('play').click(); }
+          else if (e.key === 'ArrowRight') seekTo(audio.currentTime + (e.shiftKey ? 60 : 10));
+          else if (e.key === 'ArrowLeft') seekTo(audio.currentTime - (e.shiftKey ? 60 : 10));
+        });
+
+        // auto-load on open
+        if (location.protocol === 'file:') {
+          log('Opened via file:// — browsers will block the playlist requests. Serve over HTTP instead (see hint).', 'warn');
+          setStatus('serve this page over http://', 'bad');
+        } else {
+          load($('url').value.trim());
+        }
+      })();
+    </script>
+  </body>
+</html>

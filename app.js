@@ -8,12 +8,17 @@ dotenv.config();
 const ROOT = process.env.ROOT || '';
 const PORT = process.env.PORT || 3000;
 const TOKEN = process.env.TOKEN;
+const SEGMENTS = process.env.SEGMENTS;
 
 import { Server } from 'socket.io';
 const io = new Server(server);
 
 
 app.use(express.json());
+
+if (SEGMENTS)
+    app.use(`${ROOT}/segments/`, express.static(SEGMENTS));
+
 app.use(`${ROOT}/`, express.static('public'));
 
 io.on('connection', (socket) => {

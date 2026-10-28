@@ -31,6 +31,12 @@ cp .env.example .env
 node app.js
 ```
 
+## Player
+
+If the `/player` endpoint is needed, add `SEGMENTS=/path/to/segments` to
+`.env`, which is the directory containing `playlist.m3u8` and the `seg_*.ts`
+files.
+
 ## Attribution
 
 Fonts _Ortica Angular_ and _Ribes Light_ from
