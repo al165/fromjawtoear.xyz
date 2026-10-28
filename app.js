@@ -16,8 +16,12 @@ const io = new Server(server);
 
 app.use(express.json());
 
-if (SEGMENTS)
+if (SEGMENTS) {
+    console.log(`SEGMENTS: ${SEGMENTS}`);
     app.use(`${ROOT}/segments/`, express.static(SEGMENTS));
+} else {
+    console.warn('No SEGMENTS dir found in environment');
+}
 
 app.use(`${ROOT}/`, express.static('public'));
 
