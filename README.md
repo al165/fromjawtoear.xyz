@@ -7,9 +7,28 @@ Accepts sensor data to `/api/sensor` so long as `token` is included in the
 body, which can be set in `/srv/config/fromjawtoear.env` (if deploying with
 `pm2`), otherwise in `.env` in root.
 
+## Starting
+
+### Docker
+
 ```sh
 cp .env.example .env
 docker compose up -d --build
+```
+
+### pm2
+
+```sh
+mkdir /srv/config
+cp .env.example /srv/config/fromjawtoear.env
+pm2 start ecosystem.config.cjs
+```
+
+### Bare metal
+
+```sh
+cp .env.example .env
+node app.js
 ```
 
 ## Attribution
